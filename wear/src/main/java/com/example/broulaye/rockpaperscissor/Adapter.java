@@ -7,10 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-/**
- * Created by Shuo on 11/1/2016.
- * This is an adapter class to populate the spinner. The mDataset saves the color string
- */
 
 public class Adapter extends WearableListView.Adapter {
     private final LayoutInflater mInflater;

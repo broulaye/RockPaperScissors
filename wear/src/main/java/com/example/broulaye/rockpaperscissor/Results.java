@@ -54,4 +54,16 @@ public class Results {
     public void incrementTie(){
         tie++;
     }
+
+    public void setWin(int win) {
+        this.win = win;
+    }
+
+    public void setLoss(int loss) {
+        this.loss = loss;
+    }
+
+    public void setTie(int tie) {
+        this.tie = tie;
+    }
 }

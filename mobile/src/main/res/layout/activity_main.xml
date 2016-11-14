@@ -27,7 +27,8 @@
                 android:textAlignment="center"
                 android:padding="30dp"
                 android:textColor="#000000"
-                android:id="@+id/rock"/>
+                android:id="@+id/rock" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="0px"
@@ -38,6 +39,7 @@
                 android:padding="30dp"
                 android:textColor="#000000"
                 android:id="@+id/paper"/>
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="0px"

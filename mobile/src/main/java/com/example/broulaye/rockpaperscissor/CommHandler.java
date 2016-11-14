@@ -49,22 +49,23 @@ public class CommHandler implements
         }
         results = mainActivity.getResults();
 
-        /**
         UIHandler=new Handler(Looper.getMainLooper()){
             @Override
             public void handleMessage(Message msg) {
-
-                System.out.println("Mobile Me: " + results.getMe());
-                System.out.println("Mobile Opponent: " + results.getOpponent());
-                //results.setOpponent((int)msg.obj);
-                if(results.getOpponent() != -1) {
-
-                    mainActivity.updateScore();
-                    mainActivity.updateUI();
+                if(msg.what==0){
+                    results.setOpponent((int)msg.obj);
+                    System.out.println("Open hand:" + results.getOpponent() + " My hand:" + results.getMe());
+                    if(results.getMe() != -1 && results.getOpponent() != -1) {
+                        int index = results.getMe();
+                        mainActivity.updateScore();
+                        mainActivity.updateUI();
+                        mainActivity.unblockUser();
+                        mainActivity.resetViewColor(index);
+                    }
                 }
                 super.handleMessage(msg);
             }
-        };*/
+        };
     }
 
     public void sendMessage(int currentIndex){
@@ -108,7 +109,7 @@ public class CommHandler implements
                     int choiceIndex=dataMap.getInt(CURRENT_WCHOICE_INDEX);
                     //System.out.println("received change from watch with choice: " + choiceIndex);
                     //results.setOpponent(choiceIndex);
-                    results.setOpponent(choiceIndex);
+                    /**results.setOpponent(choiceIndex);
 
                     System.out.println("Open hand:" + results.getOpponent() + " My hand:" + results.getMe());
                     if(results.getMe() != -1 && results.getOpponent() != -1) {
@@ -117,10 +118,10 @@ public class CommHandler implements
 
                         System.out.println("Unblocking user after updating user and score in mobile");
                         mainActivity.unblockUser();
-                    }
+                    }*/
 
-                    //android.os.Message msg=UIHandler.obtainMessage(0,choiceIndex);
-                    //msg.sendToTarget();
+                    android.os.Message msg=UIHandler.obtainMessage(0,choiceIndex);
+                    msg.sendToTarget();
                 }
             }
         }
