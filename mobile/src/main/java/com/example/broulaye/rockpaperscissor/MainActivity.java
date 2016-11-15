@@ -22,6 +22,10 @@ import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.Wearable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -33,11 +37,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView Rock, Paper, Scissor, score;
     private CommHandler commHandler;
     private Results results;
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,22 +53,68 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         score = (TextView) findViewById(R.id.score);
         score.setBackgroundColor(Color.WHITE);
         results = new Results();
-        //LoadPreferences();
+        LoadPreferences();
         score.setText("Win: " + results.getWin() + "\t Loss: " + results.getLoss() + "\t Tie: " + results.getTie());
         Rock.setOnClickListener(this);
         Paper.setOnClickListener(this);
         Scissor.setOnClickListener(this);
         commHandler = new CommHandler(this);
+        sendNotification();
 
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
-        int notificationId = 1;
+
+    }
+
+
+
+    public void sendNotification() {
+        int notificationId = 001;
+        // Build intent for notification content
         Intent viewIntent = new Intent(this, MainActivity.class);
-        PendingIntent viewPendingIntent = PendingIntent.getActivity(this, 0, viewIntent, 0);
-        NotificationCompat.Builder notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this).setSmallIcon(R.drawable.cast_ic_notification_small_icon).setContentTitle("Color Picker").setContentText("User selected color ").setContentIntent(viewPendingIntent);
-        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
-        notificationManagerCompat.notify(notificationId, notificationBuilder.build());
+        //viewIntent.putExtra(EXTRA_EVENT_ID, eventId);
+        PendingIntent viewPendingIntent =
+                PendingIntent.getActivity(this, 0, viewIntent, 0);
+
+        android.support.v4.app.NotificationCompat.Builder notificationBuilder =
+                new android.support.v4.app.NotificationCompat.Builder(this)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("RockPaperScissors!")
+                        .setContentText("Let's Play!")
+                        .setContentIntent(viewPendingIntent);
+
+        // Get an instance of the NotificationManager service
+        NotificationManagerCompat notificationManager =
+                NotificationManagerCompat.from(this);
+
+        // Build the notification and issues it with notification manager.
+        notificationManager.notify(notificationId, notificationBuilder.build());
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        commHandler.disconect();
+    }
+
+
+    public void sendMessage(final String path, final String text, final GoogleApiClient mApiClient ) {
+        new Thread( new Runnable() {
+            @Override
+            public void run() {
+                NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes( mApiClient ).await();
+                for(Node node : nodes.getNodes()) {
+                    MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(
+                            mApiClient, node.getId(), path, text.getBytes() ).await();
+                }
+
+                runOnUiThread( new Runnable() {
+                    @Override
+                    public void run() {
+                        //mEditText.setText( "" );
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override
@@ -76,22 +122,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String choice = ((TextView) v).getText().toString();
         v.setBackgroundColor(Color.BLUE);
         switch (choice) {
-            case "Rock":
+            case "✊":
                 PlayIndex = 0;
                 break;
-            case "Paper":
+            case "✋":
                 PlayIndex = 1;
                 break;
-            case "Scissor":
+            case "✌":
                 PlayIndex = 2;
                 break;
         }
 
         if (PlayIndex != -1) {
             System.out.println("Blocking user after interaction in mobile");
-            results.setMe(PlayIndex);
+
             blockUser();
         }
+        results.setMe(PlayIndex);
 
 
         System.out.println("Sending message from phone");
@@ -191,6 +238,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
     }
 
+
+
+
     @Override
     public void onBackPressed() {
         super.onBackPressed();
@@ -199,7 +249,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onResume() {
-        //LoadPreferences();
+        LoadPreferences();
         super.onResume();
     }
 
@@ -237,6 +287,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     private void LoadPreferences() {
+
         Log.e("MainActivity", "LoadPreferences");
         SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
         results.setMe(sharedPreferences.getInt("Me", -1));

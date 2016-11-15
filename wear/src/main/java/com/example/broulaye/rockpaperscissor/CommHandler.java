@@ -34,6 +34,7 @@ public class CommHandler implements
 
     public static final String CURRENT_MCHOICE_INDEX = "current choice mobile";
     public static final String CURRENT_WCHOICE_INDEX = "current choice wear";
+    private static final String START_ACTIVITY = "/start_activity";
     Results results;
     static Handler UIHandler=null;
     public CommHandler(final MainActivity mainActivity) {
@@ -56,17 +57,19 @@ public class CommHandler implements
                     results.setOpponent((int)msg.obj);
                     System.out.println("Open hand:" + results.getOpponent() + " My hand:" + results.getMe());
                     if(results.getMe() != -1 && results.getOpponent() != -1) {
-                        int index = results.getMe();
+
                         mainActivity.updateScore();
                         mainActivity.updateUI();
                         mainActivity.unblockUser();
-                        mainActivity.resetViewColor(index);
+                        mainActivity.resetViewColor(mainActivity.getViewHolder());
+
                     }
                 }
                 super.handleMessage(msg);
             }
         };
     }
+
 
     public void sendMessage(int currentIndex){
         new NumberSenderAsync().execute(currentIndex);
@@ -89,6 +92,7 @@ public class CommHandler implements
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Wearable.DataApi.addListener(googleApiClient, this);
+        mainActivity.sendMessage(START_ACTIVITY, "", googleApiClient);
     }
 
     @Override

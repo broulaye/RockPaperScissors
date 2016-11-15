@@ -16,15 +16,23 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.widget.TextView;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.Wearable;
+
 public class MainActivity extends WearableActivity implements WearableListView.ClickListener{
 
     private BoxInsetLayout mContainerView;
     private Results results;
     private TextView score;
+    WearableListView.ViewHolder viewHolder2;
     WearableListView wearableListView;
+    WearableListView wearableListView2;
     //The adapter object to add items to the list
     Adapter adapter;
-    String[] elements = {"rock", "paper", "scissor"};
+    String[] elements = {"✊", "✋", "✌"};
     CommHandler commHandler;
     private int playIndex;
 
@@ -35,11 +43,12 @@ public class MainActivity extends WearableActivity implements WearableListView.C
         setAmbientEnabled();
         playIndex = -1;
         results = new Results();
-        //LoadPreferences();
+        LoadPreferences();
         score = (TextView) findViewById(R.id.score);
         score.setText("Win: " + results.getWin() + "\t Loss: " + results.getLoss() + "\t Tie: " + results.getTie());
         mContainerView = (BoxInsetLayout) findViewById(R.id.container);
         wearableListView = (WearableListView) findViewById(R.id.wearList);
+        wearableListView2 = (WearableListView) findViewById(R.id.wearList2);
 
         /*
         * In the class we use wearableListView.addOnCentralPositionChangedListener(this);
@@ -54,10 +63,36 @@ public class MainActivity extends WearableActivity implements WearableListView.C
 
         //Add the adapter to wearableListView
         wearableListView.setAdapter(adapter);
+        //wearableListView2.setAdapter(adapter);
+        //wearableListView2.getChildAt(1).setBackgroundColor(Color.BLUE);
         wearableListView.setClickListener(this);
         commHandler=new CommHandler(this);
 
 
+
+    }
+
+    public void sendMessage(final String path, final String text, final GoogleApiClient mApiClient ) {
+        new Thread( new Runnable() {
+            @Override
+            public void run() {
+                NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes( mApiClient ).await();
+                for(Node node : nodes.getNodes()) {
+                    MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(
+                            mApiClient, node.getId(), path, text.getBytes() ).await();
+                }
+
+                runOnUiThread( new Runnable() {
+                    @Override
+                    public void run() {
+                        //mEditText.setText( "" );
+                    }
+                });
+            }
+        }).start();
+    }
+
+    public void sendNotification() {
         int notificationId = 001;
         // Build intent for notification content
         Intent viewIntent = new Intent(this, MainActivity.class);
@@ -78,8 +113,6 @@ public class MainActivity extends WearableActivity implements WearableListView.C
 
         // Build the notification and issues it with notification manager.
         notificationManager.notify(notificationId, notificationBuilder.build());
-
-
     }
 
     @Override
@@ -102,7 +135,7 @@ public class MainActivity extends WearableActivity implements WearableListView.C
 
     private void updateDisplay() {
         if (isAmbient()) {
-            mContainerView.setBackgroundColor(getResources().getColor(android.R.color.black));
+            mContainerView.setBackgroundColor(getResources().getColor(android.R.color.white));
         } else {
             mContainerView.setBackground(null);
         }
@@ -111,13 +144,14 @@ public class MainActivity extends WearableActivity implements WearableListView.C
     @Override
     public void onClick(WearableListView.ViewHolder viewHolder) {
         playIndex = viewHolder.getAdapterPosition();
+        viewHolder2 = viewHolder;
         viewHolder.itemView.setBackgroundColor(Color.BLUE);
         //playIndex = posi;
         if(playIndex != -1) {
             System.out.println("Blocking user after interaction in wear");
-            results.setMe(playIndex);
             blockUser();
         }
+        results.setMe(playIndex);
 
 
 
@@ -205,6 +239,9 @@ public class MainActivity extends WearableActivity implements WearableListView.C
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
     }
 
+
+
+
     @Override
     public void onBackPressed() {
         super.onBackPressed();
@@ -214,7 +251,7 @@ public class MainActivity extends WearableActivity implements WearableListView.C
     @Override
     protected void onResume() {
         super.onResume();
-        //LoadPreferences();
+        LoadPreferences();
     }
 
     @Override
@@ -246,6 +283,7 @@ public class MainActivity extends WearableActivity implements WearableListView.C
         editor.putInt("Loss", results.getLoss());
         editor.putInt("Tie", results.getTie());
 
+
         editor.apply();
     }
 
@@ -262,7 +300,12 @@ public class MainActivity extends WearableActivity implements WearableListView.C
         results.setTie(sharedPreferences.getInt("Tie", 0));
         if(results.getMe() != -1) {
             blockUser();
-            setViewColor(results.getMe());
+            if(results.getMe() == 2) {
+                setViewColor(results.getMe());
+            }
+            else {
+
+            }
         }
         else {
             unblockUser();
@@ -287,12 +330,16 @@ public class MainActivity extends WearableActivity implements WearableListView.C
     }
 
 
-    public void resetViewColor(int index) {
-        wearableListView.getChildAt(index).setBackgroundColor(Color.WHITE);
+    public void resetViewColor(WearableListView.ViewHolder holder) {
+        holder.itemView.setBackgroundColor(Color.WHITE);
     }
 
     public void setViewColor(int index) {
         wearableListView.getChildAt(index).setBackgroundColor(Color.BLUE);
+    }
+
+    public WearableListView.ViewHolder getViewHolder(){
+        return viewHolder2;
     }
 
 }
